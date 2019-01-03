@@ -1,3 +1,5 @@
+//Author Asim Zafir
+//Zscaler Project
 import React from 'react';
 import Tabs from "react-simpletabs";
 import BarChart from '../../src/BarChart.js';
@@ -20,7 +22,12 @@ class Demo extends React.Component {
             barDataMem_Percent :[{
                 label: 'mem',
                 values: [{x: '1', y: 0}]
-            }]
+            }],
+            barDataNet_Percent :[{
+                label: 'network',
+                values: [{x: '1', y: 0}]
+            }],
+
         }
     }
 
@@ -62,6 +69,43 @@ class Demo extends React.Component {
             });
     }
 
+
+    fetchNetData() {
+
+        var _this = this;
+        axios.get('http://34.239.233.186:61208/api/3/network')
+            .then(function (response) {
+                console.log('rx : ',response.data);
+                if(localStorage.getItem('rx')){
+                    var arr = JSON.parse(localStorage.getItem('rx'));
+                    console.log('before', arr);
+                    arr.push(response.data);
+                    console.log('after', arr);
+                    localStorage.setItem('rx',JSON.stringify(arr));
+                }else{
+                    var arr = [];
+                    arr.push(response.data);
+                    localStorage.setItem('rx',JSON.stringify(arr));
+                }
+                var net_records = JSON.parse(localStorage.getItem('rx'));
+                _this.setState(state=>{
+                    console.log('All rx records : ',net_records);
+                    state.barDataNet_Percent[0].values = [];
+
+                    for(var i=0;i<net_records.length;i++){
+                        console.log('DATA entry: ', net_records[i][1].rx);
+                        state.barDataNet_Percent[0].values.push({
+                            x:''+(i+1),
+                            y:net_records[i][1].rx
+                        });
+                    }
+                    return state;
+                });
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
+    }
     fetchMemData(){
         var _this = this;
         axios.get('http://34.239.233.186:61208/api/3/mem')
@@ -99,6 +143,7 @@ class Demo extends React.Component {
         var _this = this;
         _this.fetchCpuData();
         _this.fetchMemData();
+        _this.fetchNetData();
         // setInterval(function(){
         //     _this.fetchCpuData();
         //     _this.fetchMemData();
@@ -151,6 +196,19 @@ class Demo extends React.Component {
                             <BarChart
                                 colorScale={colorScale}
                                 data={this.state.barDataCPU_Interupts}
+                                height={400}
+                                width={400}
+                                margin={margin}
+                                tooltipHtml={barToolTips}
+                                tooltipOffset={toolTipOffset}>
+                                <span>Child</span>
+                            </BarChart>
+                        </section>
+                        <section className='chart'>
+                            <h1>RX</h1>
+                            <BarChart
+                                colorScale={colorScale}
+                                data={this.state.barDataNet_Percent}
                                 height={400}
                                 width={400}
                                 margin={margin}
